@@ -14,6 +14,7 @@ class FHIRPatientIntakeSerializer(serializers.Serializer):
     gender = serializers.CharField()
     name = serializers.ListField()
     identifier = serializers.ListField(required=False)
+    telecom = serializers.ListField(required=False)
 
     def validate_birthDate(self, value):
         today = date.today()
@@ -50,6 +51,15 @@ class FHIRPatientIntakeSerializer(serializers.Serializer):
         for identifier in identifiers:
             if identifier.get("system") == "http://hl7.org/fhir/sid/us-ssn":
                 ssn = identifier.get("value")
+        
+        # Extract Email
+        email = None
+        telecom = validated_data.get("telecom", [])
+
+        for contact in telecom:
+            if contact.get("system") == "email":
+                email = contact.get("value")
+                break
 
         encrypted_ssn = (
             encryption_service.encrypt(ssn) if ssn else None
@@ -63,6 +73,7 @@ class FHIRPatientIntakeSerializer(serializers.Serializer):
             birth_date=validated_data["birthDate"],
             encrypted_ssn=encrypted_ssn,
             raw_payload=self.context["request"].data,
+            email=email
         )
 
 

@@ -9,6 +9,7 @@ from patients.models import PatientRecord, AccessLog
 from patients.serializers import (FHIRPatientIntakeSerializer,
                                  PatientRetrieveSerializer)
 from services.common import get_client_ip
+from patients.tasks import send_welcome_email
 
 
 class PatientIntakeView(APIView):
@@ -20,7 +21,11 @@ class PatientIntakeView(APIView):
         )
 
         serializer.is_valid(raise_exception=True)
-        serializer.save()
+        patient = serializer.save()
+
+        # Send welcome email asynchronously if email is provided
+        if patient.email:
+            send_welcome_email.delay(patient.fhir_id, patient.email)
 
         return Response(
             {"message": "Patient successfully ingested."},
