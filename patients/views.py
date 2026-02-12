@@ -36,7 +36,7 @@ class PatientRetrieveView(APIView):
         # Log access
         AccessLog.objects.create(
             patient=patient,
-            user=request.user if request.user.is_authenticated else None,
+            user=request.user,
             ip_address=get_client_ip(request),
         )
 
